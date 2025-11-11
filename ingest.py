@@ -6,19 +6,20 @@ from langchain_text_splitters import RecursiveCharacterTextSplitter
 from langchain_community.vectorstores import FAISS
 from langchain_community.embeddings import HuggingFaceEmbeddings
 
+# Load environment variables
 load_dotenv()
 
 # === CONFIGURATION ===
-DATA_DIR = Path("data")                # Folder where PDFs/TXT files are stored
-INDEX_DIR = "faiss_index"              # Folder to save FAISS index
-EMBED_MODEL = "sentence-transformers/paraphrase-MiniLM-L3-v2"  # Lightweight model for Render
+DATA_DIR = Path("data")                # Folder containing .pdf or .txt files
+INDEX_DIR = "faiss_index"              # Folder where FAISS index will be saved
+EMBED_MODEL = "intfloat/e5-small-v2"   # ✅ Efficient & accurate model (Render-friendly)
 
 def load_documents(data_dir: Path):
-    """Loads all .txt and .pdf files recursively from the data directory."""
+    """Load all .txt and .pdf files recursively from the data directory."""
     docs = []
 
     if not data_dir.exists():
-        raise FileNotFoundError("⚠️ Folder 'data/' not found. Create it and add your files.")
+        raise FileNotFoundError("⚠️ Folder 'data/' not found. Please create it and add your files.")
 
     for file_path in data_dir.rglob("*"):
         if file_path.suffix.lower() == ".txt":
@@ -32,17 +33,17 @@ def load_documents(data_dir: Path):
             docs.extend(loader.load())
 
     if not docs:
-        print("⚠️ No .txt or .pdf files found in data/. Add files and rerun.")
+        print("⚠️ No .txt or .pdf files found in 'data/'. Add files and rerun.")
     return docs
 
 
 def main():
-    # Step 1: Load documents
+    # Step 1: Load all documents
     raw_docs = load_documents(DATA_DIR)
     if not raw_docs:
         return
 
-    # Step 2: Split text into chunks
+    # Step 2: Split text into smaller chunks for better retrieval
     print("✂️ Splitting documents into chunks...")
     splitter = RecursiveCharacterTextSplitter(
         chunk_size=1000,
@@ -52,11 +53,11 @@ def main():
     docs = splitter.split_documents(raw_docs)
     print(f"✅ Created {len(docs)} text chunks.")
 
-    # Step 3: Generate embeddings
-    print("🔢 Generating embeddings using HuggingFace...")
+    # Step 3: Generate embeddings using a lightweight, high-accuracy model
+    print(f"🔢 Generating embeddings using model: {EMBED_MODEL}")
     embeddings = HuggingFaceEmbeddings(model_name=EMBED_MODEL)
 
-    # Step 4: Store vectors in FAISS
+    # Step 4: Build and save FAISS index
     print("💾 Building FAISS index...")
     vectordb = FAISS.from_documents(docs, embeddings)
     vectordb.save_local(INDEX_DIR)
