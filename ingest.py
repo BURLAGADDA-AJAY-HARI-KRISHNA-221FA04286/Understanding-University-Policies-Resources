@@ -8,10 +8,10 @@ from langchain_community.embeddings import HuggingFaceEmbeddings
 
 load_dotenv()
 
-# Directories
-DATA_DIR = Path("data")
-INDEX_DIR = "faiss_index"
-EMBED_MODEL = "sentence-transformers/all-MiniLM-L6-v2"
+# === CONFIGURATION ===
+DATA_DIR = Path("data")                # Folder where PDFs/TXT files are stored
+INDEX_DIR = "faiss_index"              # Folder to save FAISS index
+EMBED_MODEL = "sentence-transformers/paraphrase-MiniLM-L3-v2"  # Lightweight model for Render
 
 def load_documents(data_dir: Path):
     """Loads all .txt and .pdf files recursively from the data directory."""
