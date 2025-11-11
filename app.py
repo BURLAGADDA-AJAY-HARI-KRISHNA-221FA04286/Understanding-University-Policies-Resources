@@ -7,43 +7,46 @@ from langchain_community.embeddings import HuggingFaceEmbeddings
 # Load environment variables
 load_dotenv()
 
-# Ensure you have GOOGLE_API_KEY set in your .env file
+# ✅ Ensure you have GOOGLE_API_KEY set in your .env file
 GOOGLE_API_KEY = os.getenv("GOOGLE_API_KEY")
 
-# Initialize the Gemini client (new SDK)
+# Initialize Gemini client
 client = genai.Client(api_key=GOOGLE_API_KEY)
 
-# Load FAISS index
+# === Load FAISS Index ===
 print("🔍 Loading FAISS index...")
 
-# ✅ Use lightweight embedding model (Render-friendly)
-embeddings = HuggingFaceEmbeddings(model_name="sentence-transformers/paraphrase-MiniLM-L3-v2")
+# ✅ Use balanced, memory-efficient embedding model for Render free tier
+embeddings = HuggingFaceEmbeddings(model_name="intfloat/e5-small-v2")
 
-# Ensure 'faiss_index' directory exists in your current working directory
+# Ensure 'faiss_index' folder exists in your working directory
 vectorstore = FAISS.load_local("faiss_index", embeddings, allow_dangerous_deserialization=True)
 retriever = vectorstore.as_retriever(search_kwargs={"k": 5})
 
-def get_relevant_context(query):
-    """Retrieve relevant text chunks using FAISS retriever."""
+
+def get_relevant_context(query: str) -> str:
+    """Retrieve relevant text chunks from FAISS index."""
     docs = retriever.invoke(query)
     return "\n\n".join([doc.page_content for doc in docs])
 
-def generate_answer(prompt):
-    """Generate content with Gemini (v2.5 API)."""
+
+def generate_answer(prompt: str) -> str:
+    """Generate a response using Gemini 2.5 Flash."""
     response = client.models.generate_content(
-        model="gemini-2.5-flash",  # ✅ Latest, fast and efficient
+        model="gemini-2.5-flash",
         contents=prompt
     )
     return response.text if hasattr(response, "text") else str(response)
 
-def answer_question(query):
-    """Pipeline to get context and generate a final answer."""
+
+def answer_question(query: str) -> str:
+    """Pipeline: Retrieve context → Generate final answer."""
     print("🧠 Retrieving context...")
     context = get_relevant_context(query)
 
     prompt = f"""
-You are a helpful university assistant.
-Use the context below to answer accurately.
+You are a helpful and accurate university assistant.
+Use the context below to answer concisely and factually.
 
 Context:
 {context}
@@ -55,16 +58,17 @@ Answer:
 """
     return generate_answer(prompt)
 
+
+# Run interactively for testing
 if __name__ == "__main__":
-    print("\n🎓 University RAG Chatbot is ready! Type your question below:\n")
+    print("\n🎓 University RAG Chatbot (Render Optimized) is ready!\nType your question below:\n")
     while True:
         question = input("> ").strip()
         if question.lower() in ["exit", "quit"]:
             print("👋 Goodbye!")
             break
-
         try:
             answer = answer_question(question)
             print("\n" + answer + "\n")
         except Exception as e:
-            print(f"\n❌ An error occurred during processing: {e}\n")
+            print(f"\n❌ Error: {e}\n")
